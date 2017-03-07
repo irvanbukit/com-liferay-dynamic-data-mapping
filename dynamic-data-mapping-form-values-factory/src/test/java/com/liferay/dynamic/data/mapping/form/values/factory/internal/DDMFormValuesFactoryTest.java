@@ -15,8 +15,6 @@
 package com.liferay.dynamic.data.mapping.form.values.factory.internal;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueRequestParameterRetriever;
-import com.liferay.dynamic.data.mapping.form.values.factory.DDMFormValuesFactory;
-import com.liferay.dynamic.data.mapping.form.values.factory.internal.DDMFormValuesFactoryImpl;
 import com.liferay.dynamic.data.mapping.io.DDMFormValuesJSONSerializer;
 import com.liferay.dynamic.data.mapping.io.internal.DDMFormValuesJSONSerializerImpl;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
@@ -32,16 +30,23 @@ import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.upload.FileItem;
+import com.liferay.portal.kernel.upload.UploadServletRequest;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ReflectionUtil;
 import com.liferay.portal.kernel.util.StringPool;
 
 import java.lang.reflect.Field;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -74,6 +79,7 @@ public class DDMFormValuesFactoryTest extends PowerMockito {
 		setUpJSONFactoryUtil();
 		setUpLocaleThreadLocal();
 		setUpLocaleUtil();
+		setUpPortalUtil();
 	}
 
 	@After
@@ -191,6 +197,54 @@ public class DDMFormValuesFactoryTest extends PowerMockito {
 			"ddm$$Content$thsy$0$$en_US", "Content");
 		mockHttpServletRequest.addParameter(
 			"ddm$$Content$thsy$0$$pt_BR", "Conteudo");
+
+		DDMFormValues actualDDMFormValues = _ddmFormValuesFactory.create(
+			mockHttpServletRequest, ddmForm);
+
+		assertEquals(expectedDDMFormValues, actualDDMFormValues);
+	}
+
+	@Test
+	public void testCreateWithMultipartHTTPRequest() throws Exception {
+		DDMForm ddmForm = DDMFormTestUtil.createDDMForm(
+			"Title", "Content", "FormTest");
+
+		DDMFormValues expectedDDMFormValues = createDDMFormValues(
+			ddmForm, createAvailableLocales(LocaleUtil.US), LocaleUtil.US);
+
+		Map<String, FileItem[]> multipartParameterMap = new HashMap<>();
+
+		expectedDDMFormValues.addDDMFormFieldValue(
+			createDDMFormFieldValue(
+				"wqer", "Title", createLocalizedValue("Title", LocaleUtil.US)));
+		expectedDDMFormValues.addDDMFormFieldValue(
+			createDDMFormFieldValue(
+				"thsy", "Content",
+				createLocalizedValue("Content", LocaleUtil.US)));
+		expectedDDMFormValues.addDDMFormFieldValue(
+			createDDMFormFieldValue(
+				"tmad", "FormTest", createLocalizedValue("", LocaleUtil.US)));
+
+		MockHttpServletRequest mockHttpServletRequest =
+			new MockHttpServletRequest();
+
+		mockHttpServletRequest.addParameter("availableLanguageIds", "en_US");
+		mockHttpServletRequest.addParameter(
+			"defaultLanguageId", LocaleUtil.toLanguageId(LocaleUtil.US));
+
+		mockHttpServletRequest.addParameter(
+			"ddm$$Title$wqer$0$$en_US", "Title");
+
+		mockHttpServletRequest.addParameter(
+			"ddm$$Content$thsy$0$$en_US", "Content");
+
+		multipartParameterMap.put("ddm$$FormTest$tmad$0$$en_US", null);
+
+		when(
+			_uploadServletRequest.getMultipartParameterMap()
+		).thenReturn(
+			multipartParameterMap
+		);
 
 		DDMFormValues actualDDMFormValues = _ddmFormValuesFactory.create(
 			mockHttpServletRequest, ddmForm);
@@ -991,7 +1045,19 @@ public class DDMFormValuesFactoryTest extends PowerMockito {
 		);
 	}
 
-	private final DDMFormValuesFactory _ddmFormValuesFactory =
+	protected void setUpPortalUtil() {
+		Portal portal = mock(Portal.class);
+
+		when(
+			portal.getUploadServletRequest((HttpServletRequest)Matchers.any())
+		).thenReturn(
+			_uploadServletRequest
+		);
+
+		_ddmFormValuesFactory.portal = portal;
+	}
+
+	private final DDMFormValuesFactoryImpl _ddmFormValuesFactory =
 		new DDMFormValuesFactoryImpl();
 	private final DDMFormValuesJSONSerializer _ddmFormValuesJSONSerializer =
 		new DDMFormValuesJSONSerializerImpl();
@@ -1000,5 +1066,8 @@ public class DDMFormValuesFactoryTest extends PowerMockito {
 	@Mock
 	private ServiceTrackerMap
 		<String, DDMFormFieldValueRequestParameterRetriever> _serviceTrackerMap;
+
+	@Mock
+	private UploadServletRequest _uploadServletRequest;
 
 }
