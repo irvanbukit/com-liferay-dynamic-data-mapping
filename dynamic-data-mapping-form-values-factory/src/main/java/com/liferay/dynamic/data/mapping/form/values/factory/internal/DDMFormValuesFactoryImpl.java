@@ -35,7 +35,6 @@ import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -98,7 +97,7 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 	public DDMFormValues create(
 		PortletRequest portletRequest, DDMForm ddmForm) {
 
-		return create(_portal.getHttpServletRequest(portletRequest), ddmForm);
+		return create(portal.getHttpServletRequest(portletRequest), ddmForm);
 	}
 
 	@Activate
@@ -266,7 +265,7 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 
 		Set<String> defaultDDMFormFieldParameterNames = new TreeSet<>();
 
-		poupulateDefaultDDMFormFieldParameterNames(
+		populateDefaultDDMFormFieldParameterNames(
 			ddmForm.getDDMFormFields(), StringPool.BLANK,
 			defaultDDMFormFieldParameterNames);
 
@@ -603,10 +602,10 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 	protected String getPortletNamespace(
 		HttpServletRequest httpServletRequest) {
 
-		String portletId = _portal.getPortletId(httpServletRequest);
+		String portletId = portal.getPortletId(httpServletRequest);
 
 		if (Validator.isNotNull(portletId)) {
-			return _portal.getPortletNamespace(portletId);
+			return portal.getPortletNamespace(portletId);
 		}
 
 		return StringPool.BLANK;
@@ -617,7 +616,7 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 		Set<String> ddmFormFieldParameterNames) {
 
 		UploadServletRequest uploadServletRequest =
-			PortalUtil.getUploadServletRequest(httpServletRequest);
+			portal.getUploadServletRequest(httpServletRequest);
 
 		if (uploadServletRequest != null) {
 			Map<String, FileItem[]> multipartParameterMap =
@@ -647,7 +646,7 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 		return false;
 	}
 
-	protected void poupulateDefaultDDMFormFieldParameterNames(
+	protected void populateDefaultDDMFormFieldParameterNames(
 		List<DDMFormField> ddmFormFields,
 		String parentDefaultDDMFormFieldParameterName,
 		Set<String> defaultDDMFormFieldParameterNames) {
@@ -660,7 +659,7 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 			defaultDDMFormFieldParameterNames.add(
 				defaultDDMFormFieldParameterName);
 
-			poupulateDefaultDDMFormFieldParameterNames(
+			populateDefaultDDMFormFieldParameterNames(
 				ddmFormField.getNestedDDMFormFields(),
 				defaultDDMFormFieldParameterName,
 				defaultDDMFormFieldParameterNames);
@@ -794,6 +793,9 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 		}
 	}
 
+	@Reference
+	protected Portal portal;
+
 	private static final int _DDM_FORM_FIELD_INDEX_INDEX = 2;
 
 	private static final int _DDM_FORM_FIELD_INSTANCE_ID_INDEX = 1;
@@ -804,10 +806,6 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 	private final DDMFormFieldValueRequestParameterRetriever
 		_defaultDDMFormFieldValueRequestParameterRetriever =
 			new DefaultDDMFormFieldValueRequestParameterRetriever();
-
-	@Reference
-	private Portal _portal;
-
 	private ServiceTrackerMap
 		<String, DDMFormFieldValueRequestParameterRetriever> _serviceTrackerMap;
 
