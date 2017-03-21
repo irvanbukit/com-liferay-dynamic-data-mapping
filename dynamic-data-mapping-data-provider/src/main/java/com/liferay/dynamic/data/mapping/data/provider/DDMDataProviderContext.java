@@ -25,10 +25,6 @@ import java.util.Map;
  */
 public class DDMDataProviderContext {
 
-	/**
-	 * @deprecated As of 2.1.0, with no direct replacement.
-	 */
-	@Deprecated
 	public DDMDataProviderContext(DDMFormValues ddmFormValues) {
 		this(null, null, ddmFormValues);
 	}
@@ -42,11 +38,6 @@ public class DDMDataProviderContext {
 		_ddmFormValues = ddmFormValues;
 	}
 
-	/**
-	 * @deprecated As of 2.1.0, replaced by {@link
-	 *             DDMDataProviderRequest#queryString(Map)}
-	 */
-	@Deprecated
 	public void addParameters(Map<String, String> parameters) {
 		_parameters.putAll(parameters);
 	}
@@ -59,11 +50,6 @@ public class DDMDataProviderContext {
 		return _ddmFormValues;
 	}
 
-	/**
-	 * @deprecated As of 2.1.0, replaced by {@link
-	 *             DDMDataProviderRequest#getParameters()}
-	 */
-	@Deprecated
 	public Map<String, String> getParameters() {
 		return _parameters;
 	}
