@@ -102,7 +102,7 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		_serviceTrackerMap = ServiceTrackerMapFactory.openSingleValueMap(
+		serviceTrackerMap = ServiceTrackerMapFactory.openSingleValueMap(
 			bundleContext, DDMFormFieldValueRequestParameterRetriever.class,
 			"ddm.form.field.type.name");
 	}
@@ -160,6 +160,54 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 					ddmFormFieldParameterNames);
 			}
 		}
+	}
+
+	protected void collectDDMFormFieldParameterNames(
+		HttpServletRequest httpServletRequest, Set<String> parameterNames,
+		Set<String> ddmFormFieldParameterNames) {
+
+		for (String parameterName : parameterNames) {
+			parameterName = parameterName.replace(
+				getPortletNamespace(httpServletRequest), StringPool.BLANK);
+
+			if (!isDDMFormFieldParameter(parameterName)) {
+				continue;
+			}
+
+			ddmFormFieldParameterNames.addAll(
+				getDDMFormFieldParameterNames(parameterName));
+		}
+	}
+
+	protected void collectMultipartHttpServletRequestParameters(
+		HttpServletRequest httpServletRequest,
+		Set<String> ddmFormFieldParameterNames) {
+
+		UploadServletRequest uploadServletRequest =
+			portal.getUploadServletRequest(httpServletRequest);
+
+		if (uploadServletRequest == null) {
+			return;
+		}
+
+		Map<String, FileItem[]> multipartParameterMap =
+			uploadServletRequest.getMultipartParameterMap();
+
+		collectDDMFormFieldParameterNames(
+			httpServletRequest, multipartParameterMap.keySet(),
+			ddmFormFieldParameterNames);
+	}
+
+	protected void collectRegularHttpServletRequestParameters(
+		HttpServletRequest httpServletRequest,
+		Set<String> ddmFormFieldParameterNames) {
+
+		Map<String, String[]> parameterMap =
+			httpServletRequest.getParameterMap();
+
+		collectDDMFormFieldParameterNames(
+			httpServletRequest, parameterMap.keySet(),
+			ddmFormFieldParameterNames);
 	}
 
 	protected boolean containsDefaultDDMFormFieldParameterName(
@@ -274,7 +322,7 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 
 	@Deactivate
 	protected void deactivate() {
-		_serviceTrackerMap.close();
+		serviceTrackerMap.close();
 	}
 
 	protected String extractPrefix(String ddmFormFieldParameterName) {
@@ -347,19 +395,10 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 
 		Set<String> ddmFormFieldParameterNames = new TreeSet<>();
 
-		Map<String, String[]> parameterMap =
-			httpServletRequest.getParameterMap();
+		collectRegularHttpServletRequestParameters(
+			httpServletRequest, ddmFormFieldParameterNames);
 
-		for (String parameterName : parameterMap.keySet()) {
-			if (!isDDMFormFieldParameter(parameterName)) {
-				continue;
-			}
-
-			ddmFormFieldParameterNames.addAll(
-				getDDMFormFieldParameterNames(parameterName));
-		}
-
-		ddmFormFieldParameterNames = handleMultipartParameters(
+		collectMultipartHttpServletRequestParameters(
 			httpServletRequest, ddmFormFieldParameterNames);
 
 		checkDDMFormFieldParameterNames(ddmForm, ddmFormFieldParameterNames);
@@ -438,11 +477,11 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 	protected DDMFormFieldValueRequestParameterRetriever
 		getDDMFormFieldValueRequestParameterRetriever(String fieldType) {
 
-		if (!_serviceTrackerMap.containsKey(fieldType)) {
+		if (!serviceTrackerMap.containsKey(fieldType)) {
 			return _defaultDDMFormFieldValueRequestParameterRetriever;
 		}
 
-		return _serviceTrackerMap.getService(fieldType);
+		return serviceTrackerMap.getService(fieldType);
 	}
 
 	protected List<DDMFormFieldValue> getDDMFormFieldValues(
@@ -611,33 +650,6 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 		return StringPool.BLANK;
 	}
 
-	protected Set<String> handleMultipartParameters(
-		HttpServletRequest httpServletRequest,
-		Set<String> ddmFormFieldParameterNames) {
-
-		UploadServletRequest uploadServletRequest =
-			portal.getUploadServletRequest(httpServletRequest);
-
-		if (uploadServletRequest != null) {
-			Map<String, FileItem[]> multipartParameterMap =
-				uploadServletRequest.getMultipartParameterMap();
-
-			for (String parameterName : multipartParameterMap.keySet()) {
-				parameterName = parameterName.replace(
-					getPortletNamespace(httpServletRequest), StringPool.BLANK);
-
-				if (!isDDMFormFieldParameter(parameterName)) {
-					continue;
-				}
-
-				ddmFormFieldParameterNames.addAll(
-					getDDMFormFieldParameterNames(parameterName));
-			}
-		}
-
-		return ddmFormFieldParameterNames;
-	}
-
 	protected boolean isDDMFormFieldParameter(String parameterName) {
 		if (parameterName.startsWith(getDDMFormFieldPrefix())) {
 			return true;
@@ -796,6 +808,9 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 	@Reference
 	protected Portal portal;
 
+	protected ServiceTrackerMap
+		<String, DDMFormFieldValueRequestParameterRetriever> serviceTrackerMap;
+
 	private static final int _DDM_FORM_FIELD_INDEX_INDEX = 2;
 
 	private static final int _DDM_FORM_FIELD_INSTANCE_ID_INDEX = 1;
@@ -806,7 +821,5 @@ public class DDMFormValuesFactoryImpl implements DDMFormValuesFactory {
 	private final DDMFormFieldValueRequestParameterRetriever
 		_defaultDDMFormFieldValueRequestParameterRetriever =
 			new DefaultDDMFormFieldValueRequestParameterRetriever();
-	private ServiceTrackerMap
-		<String, DDMFormFieldValueRequestParameterRetriever> _serviceTrackerMap;
 
 }
