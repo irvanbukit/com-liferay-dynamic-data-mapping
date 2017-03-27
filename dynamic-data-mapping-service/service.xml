@@ -121,6 +121,7 @@
 		<column name="classNameId" type="long" />
 		<column name="classPK" type="long" />
 		<column name="structureId" type="long" />
+		<column name="structureVersion" type="String" />
 
 		<!-- Finder methods -->
 
@@ -269,6 +270,7 @@
 		<column name="classNameId" type="long" />
 		<column name="classPK" type="long" />
 		<column name="structureId" type="long" />
+		<column name="structureVersion" type="String" />
 
 		<!-- Finder methods -->
 
