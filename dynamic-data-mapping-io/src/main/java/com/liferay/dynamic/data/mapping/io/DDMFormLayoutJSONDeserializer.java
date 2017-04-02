@@ -19,6 +19,8 @@ import com.liferay.dynamic.data.mapping.model.DDMFormLayoutColumn;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONObject;
 
+import java.util.function.Function;
+
 /**
  * @author Marcellus Tavares
  */
@@ -29,15 +31,8 @@ public interface DDMFormLayoutJSONDeserializer {
 
 	public DDMFormLayout deserialize(
 			String serializedDDMFormLayout,
-			DDMFormLayoutColumnJSONObjectTransformer
+			Function<JSONObject, DDMFormLayoutColumn>
 				ddmFormLayoutColumnJSONObjectTransformer)
 		throws PortalException;
-
-	@FunctionalInterface
-	public interface DDMFormLayoutColumnJSONObjectTransformer {
-
-		public DDMFormLayoutColumn transform(JSONObject jsonObject);
-
-	}
 
 }
