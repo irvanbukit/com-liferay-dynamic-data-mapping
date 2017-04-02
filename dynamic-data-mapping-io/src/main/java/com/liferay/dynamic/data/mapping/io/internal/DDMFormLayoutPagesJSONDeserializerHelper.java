@@ -113,30 +113,30 @@ public class DDMFormLayoutPagesJSONDeserializerHelper {
 		return ddmFormLayoutRows;
 	}
 
-	protected LocalizedValue getTitle(JSONObject jsonObject) {
+	protected LocalizedValue getLocalizedValue(JSONObject jsonObject) {
 		if (jsonObject == null) {
 			return null;
 		}
 
-		LocalizedValue title = new LocalizedValue();
+		LocalizedValue localizedValue = new LocalizedValue();
 
 		Iterator<String> itr = jsonObject.keys();
 
 		while (itr.hasNext()) {
 			String languageId = itr.next();
 
-			title.addString(
+			localizedValue.addString(
 				LocaleUtil.fromLanguageId(languageId),
 				jsonObject.getString(languageId));
 		}
 
-		return title;
+		return localizedValue;
 	}
 
 	protected void setDDMFormLayoutPageDescription(
 		JSONObject jsonObject, DDMFormLayoutPage ddmFormLayoutPage) {
 
-		LocalizedValue description = _getDescription(jsonObject);
+		LocalizedValue description = getLocalizedValue(jsonObject);
 
 		if (description == null) {
 			return;
@@ -157,7 +157,7 @@ public class DDMFormLayoutPagesJSONDeserializerHelper {
 	protected void setDDMFormLayoutPageTitle(
 		JSONObject jsonObject, DDMFormLayoutPage ddmFormLayoutPage) {
 
-		LocalizedValue title = getTitle(jsonObject);
+		LocalizedValue title = getLocalizedValue(jsonObject);
 
 		if (title == null) {
 			return;
@@ -173,26 +173,6 @@ public class DDMFormLayoutPagesJSONDeserializerHelper {
 			getDDMFormLayoutColumns(jsonArray);
 
 		ddmFormLayoutRow.setDDMFormLayoutColumns(ddmFormLayoutColumns);
-	}
-
-	private LocalizedValue _getDescription(JSONObject jsonObject) {
-		if (jsonObject == null) {
-			return null;
-		}
-
-		LocalizedValue description = new LocalizedValue();
-
-		Iterator<String> itr = jsonObject.keys();
-
-		while (itr.hasNext()) {
-			String languageId = itr.next();
-
-			description.addString(
-				LocaleUtil.fromLanguageId(languageId),
-				jsonObject.getString(languageId));
-		}
-
-		return description;
 	}
 
 	private static final DDMFormLayoutColumnJSONObjectTransformer
