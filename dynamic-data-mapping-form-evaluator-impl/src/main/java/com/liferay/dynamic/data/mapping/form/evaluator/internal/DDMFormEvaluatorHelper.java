@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -73,7 +74,8 @@ public class DDMFormEvaluatorHelper {
 		DDMDataProviderInvoker ddmDataProviderInvoker,
 		DDMExpressionFactory ddmExpressionFactory,
 		DDMFormEvaluatorContext ddmFormEvaluatorContext,
-		JSONFactory jsonFactory, UserLocalService userLocalService) {
+		JSONFactory jsonFactory, ResourceBundle resourceBundle,
+		UserLocalService userLocalService) {
 
 		_ddmDataProviderContextFactory = ddmDataProviderContextFactory;
 		_ddmDataProviderInvoker = ddmDataProviderInvoker;
@@ -84,6 +86,7 @@ public class DDMFormEvaluatorHelper {
 		_ddmFormFieldsMap = _ddmForm.getDDMFormFieldsMap(true);
 
 		_jsonFactory = jsonFactory;
+		_resourceBundle = resourceBundle;
 		_userLocalService = userLocalService;
 		_locale = ddmFormEvaluatorContext.getLocale();
 
@@ -231,6 +234,18 @@ public class DDMFormEvaluatorHelper {
 		}
 
 		return ddmFormFieldEvaluationResults;
+	}
+
+	protected String getDDMFormFieldValidationErrorMessage(
+		DDMFormFieldValidation ddmFormFieldValidation) {
+
+		String errorMessage = ddmFormFieldValidation.getErrorMessage();
+
+		if (Validator.isNotNull(errorMessage)) {
+			return errorMessage;
+		}
+
+		return LanguageUtil.get(_resourceBundle, "this-field-is-invalid");
 	}
 
 	protected DDMFormFieldValue getDDMFormFieldValue(
@@ -520,7 +535,7 @@ public class DDMFormEvaluatorHelper {
 
 		if (required && visible && emptyValue) {
 			ddmFormFieldEvaluationResult.setErrorMessage(
-				LanguageUtil.get(_locale, "this-field-is-required"));
+				LanguageUtil.get(_resourceBundle, "this-field-is-required"));
 
 			ddmFormFieldEvaluationResult.setValid(false);
 
@@ -551,7 +566,9 @@ public class DDMFormEvaluatorHelper {
 
 			if (!valid) {
 				ddmFormFieldEvaluationResult.setErrorMessage(
-					ddmFormFieldValidation.getErrorMessage());
+					getDDMFormFieldValidationErrorMessage(
+						ddmFormFieldValidation));
+
 				ddmFormFieldEvaluationResult.setValid(false);
 			}
 		}
@@ -623,6 +640,7 @@ public class DDMFormEvaluatorHelper {
 	private final Locale _locale;
 	private final Map<Integer, Integer> _pageFlow = new HashMap<>();
 	private final HttpServletRequest _request;
+	private final ResourceBundle _resourceBundle;
 	private final UserLocalService _userLocalService;
 
 }

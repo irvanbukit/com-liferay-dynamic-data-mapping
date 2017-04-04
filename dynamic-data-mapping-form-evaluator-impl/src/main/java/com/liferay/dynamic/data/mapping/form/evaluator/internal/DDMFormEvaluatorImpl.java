@@ -24,6 +24,14 @@ import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluatorContext;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.util.AggregateResourceBundle;
+import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.ResourceBundleLoader;
+import com.liferay.portal.kernel.util.ResourceBundleLoaderUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -40,17 +48,35 @@ public class DDMFormEvaluatorImpl implements DDMFormEvaluator {
 		throws DDMFormEvaluationException {
 
 		try {
+			Locale locale = ddmFormEvaluatorContext.getLocale();
+
 			DDMFormEvaluatorHelper ddmFormRuleEvaluatorHelper =
 				new DDMFormEvaluatorHelper(
 					_ddmDataProviderContextFactory, _ddmDataProviderInvoker,
 					_ddmExpressionFactory, ddmFormEvaluatorContext,
-					_jsonFactory, _userLocalService);
+					_jsonFactory, getResourceBundle(locale), _userLocalService);
 
 			return ddmFormRuleEvaluatorHelper.evaluate();
 		}
 		catch (PortalException pe) {
 			throw new DDMFormEvaluationException(pe);
 		}
+	}
+
+	protected ResourceBundle getResourceBundle(Locale locale) {
+		ResourceBundleLoader portalResourceBundleLoader =
+			ResourceBundleLoaderUtil.getPortalResourceBundleLoader();
+
+		String languageId = LocaleUtil.toLanguageId(locale);
+
+		ResourceBundle portalResourceBundle =
+			portalResourceBundleLoader.loadResourceBundle(languageId);
+
+		ResourceBundle portletResourceBundle = ResourceBundleUtil.getBundle(
+			"content.Language", locale, getClass());
+
+		return new AggregateResourceBundle(
+			portletResourceBundle, portalResourceBundle);
 	}
 
 	@Reference
