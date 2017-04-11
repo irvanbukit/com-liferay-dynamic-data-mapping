@@ -134,6 +134,16 @@ public class DDMFormValuesJSONDeserializerImpl
 		return ddmFormFieldValue;
 	}
 
+	protected DDMFormFieldValueJSONDeserializer
+		getDDMFormFieldValueJSONDeserializer(DDMFormField ddmFormField) {
+
+		if (ddmFormField == null) {
+			return null;
+		}
+
+		return _ddmFormFieldValueJSONDeserializers.get(ddmFormField.getType());
+	}
+
 	protected List<DDMFormFieldValue> getDDMFormFieldValues(
 		JSONArray jsonArray, Map<String, DDMFormField> ddmFormFieldsMap) {
 
@@ -167,7 +177,7 @@ public class DDMFormValuesJSONDeserializerImpl
 
 	protected Value getValue(DDMFormField ddmFormField, JSONObject jsonObject) {
 		DDMFormFieldValueJSONDeserializer ddmFormFieldValueJSONDeserializer =
-			_ddmFormFieldValueJSONDeserializers.get(ddmFormField.getType());
+			getDDMFormFieldValueJSONDeserializer(ddmFormField);
 
 		if (ddmFormFieldValueJSONDeserializer != null) {
 			return ddmFormFieldValueJSONDeserializer.deserialize(

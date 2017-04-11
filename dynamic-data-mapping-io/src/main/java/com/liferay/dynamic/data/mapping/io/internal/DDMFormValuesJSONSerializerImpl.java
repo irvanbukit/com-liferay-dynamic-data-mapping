@@ -136,7 +136,7 @@ public class DDMFormValuesJSONSerializerImpl
 		}
 
 		DDMFormFieldValueJSONSerializer ddmFormFieldValueJSONSerializer =
-			_ddmFormFieldValueJSONSerializers.get(ddmFormField.getType());
+			getDDMFormFieldValueJSONSerializer(ddmFormField);
 
 		if (ddmFormFieldValueJSONSerializer != null) {
 			jsonObject.put(
@@ -149,6 +149,16 @@ public class DDMFormValuesJSONSerializerImpl
 		else {
 			jsonObject.put("value", value.getString(LocaleUtil.ROOT));
 		}
+	}
+
+	protected DDMFormFieldValueJSONSerializer
+		getDDMFormFieldValueJSONSerializer(DDMFormField ddmFormField) {
+
+		if (ddmFormField == null) {
+			return null;
+		}
+
+		return _ddmFormFieldValueJSONSerializers.get(ddmFormField.getType());
 	}
 
 	protected void removeDDMFormFieldValueJSONSerializer(
