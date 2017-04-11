@@ -18,11 +18,10 @@ import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.Value;
 
 /**
- * @author Marcellus Tavares
+ * @author Leonardo Barros
  */
-public interface DDMFormFieldValueValidator {
+public interface DDMFormFieldValueJSONSerializer {
 
-	public void validate(DDMFormField ddmFormField, Value value)
-		throws DDMFormFieldValueValidationException;
+	public Object serialize(DDMFormField ddmFormField, Value value);
 
 }
