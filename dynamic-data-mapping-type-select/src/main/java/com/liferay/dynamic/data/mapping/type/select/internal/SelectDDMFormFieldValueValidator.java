@@ -24,13 +24,22 @@ import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.servlet.PortalSessionThreadLocal;
+import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.util.Encryptor;
+import com.liferay.util.EncryptorException;
+
+import java.security.Key;
 
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import javax.servlet.http.HttpSession;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -53,7 +62,10 @@ public class SelectDDMFormFieldValueValidator
 			ddmFormField.getProperty("dataSourceType"), "manual");
 
 		if (Objects.equals(dataSourceType, "manual")) {
-			validateDDMFormFieldOptions(ddmFormField, value);
+			validateManualDDMFormFieldOptions(ddmFormField, value);
+		}
+		else {
+			validateDataProviderDDMFormFieldOptions(ddmFormField, value);
 		}
 	}
 
@@ -77,7 +89,58 @@ public class SelectDDMFormFieldValueValidator
 		}
 	}
 
-	protected void validateDDMFormFieldOptions(
+	protected String decryptSelectedValue(
+			DDMFormField ddmFormField, Key key, String encryptedOptionValue)
+		throws DDMFormFieldValueValidationException {
+
+		try {
+			return Encryptor.decrypt(key, encryptedOptionValue);
+		}
+		catch (EncryptorException ee) {
+			throw new DDMFormFieldValueValidationException(
+				String.format(
+					"Invalid value found for select field \"%s\"",
+					ddmFormField.getName()));
+		}
+	}
+
+	protected Key getKey() {
+		HttpSession session = PortalSessionThreadLocal.getHttpSession();
+
+		if (session == null) {
+			return null;
+		}
+
+		String serializedKey = GetterUtil.getString(session.getAttribute(_KEY));
+
+		if (Validator.isNotNull(serializedKey)) {
+			return Encryptor.deserializeKey(serializedKey);
+		}
+
+		return null;
+	}
+
+	protected void validateDataProviderDDMFormFieldOptions(
+			DDMFormField ddmFormField, Value value)
+		throws DDMFormFieldValueValidationException {
+
+		Key key = getKey();
+
+		if (key == null) {
+			throw new DDMFormFieldValueValidationException(
+				String.format(
+					"No encryption key found for select field \"%s\"",
+					ddmFormField.getName()));
+		}
+
+		Map<Locale, String> selectedValues = value.getValues();
+
+		for (String selectedValue : selectedValues.values()) {
+			validateSelectedValue(ddmFormField, key, selectedValue);
+		}
+	}
+
+	protected void validateManualDDMFormFieldOptions(
 			DDMFormField ddmFormField, Value value)
 		throws DDMFormFieldValueValidationException {
 
@@ -102,6 +165,42 @@ public class SelectDDMFormFieldValueValidator
 
 		for (String selectedValue : selectedValues.values()) {
 			validateSelectedValue(ddmFormField, optionValues, selectedValue);
+		}
+	}
+
+	protected void validateSelectedValue(
+			DDMFormField ddmFormField, Key key, String selectedValue)
+		throws DDMFormFieldValueValidationException {
+
+		JSONArray jsonArray = createJSONArray(
+			ddmFormField.getName(), selectedValue);
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			String[] selectedValueArray = StringUtil.split(
+				jsonArray.getString(i), CharPool.POUND);
+
+			if (selectedValueArray.length != 2) {
+				throw new DDMFormFieldValueValidationException(
+					String.format(
+						"Invalid value found for select field \"%s\"",
+						ddmFormField.getName()));
+			}
+
+			String decryptedSelectedValue = decryptSelectedValue(
+				ddmFormField, key, selectedValueArray[1]);
+
+			String ddmDataProviderInstanceId = GetterUtil.getString(
+				ddmFormField.getProperty("ddmDataProviderInstanceId"));
+
+			String expectedSelectedValue = String.format(
+				"%s#%s", ddmDataProviderInstanceId, selectedValueArray[0]);
+
+			if (!expectedSelectedValue.equals(decryptedSelectedValue)) {
+				throw new DDMFormFieldValueValidationException(
+					String.format(
+						"Invalid value found for select field \"%s\"",
+						ddmFormField.getName()));
+			}
 		}
 	}
 
@@ -131,6 +230,8 @@ public class SelectDDMFormFieldValueValidator
 
 	@Reference
 	protected JSONFactory jsonFactory;
+
+	private static final String _KEY = "DDM_SERIALIZED_KEY";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		SelectDDMFormFieldValueValidator.class);

@@ -28,10 +28,17 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.KeyValuePair;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.util.Encryptor;
+
+import java.security.Key;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -128,10 +135,18 @@ public class DDMFormFieldOptionsFactoryImpl
 			List<KeyValuePair> keyValuesPairs =
 				dataProviderResponseOutput.getValue(List.class);
 
+			Key key = getKey(ddmFormFieldRenderingContext);
+
 			for (KeyValuePair keyValuePair : keyValuesPairs) {
+				String optionValue = keyValuePair.getKey();
+
+				if (key != null) {
+					optionValue = encryptOptionValue(
+						ddmDataProviderInstanceId, key, optionValue);
+				}
+
 				ddmFormFieldOptions.addOptionLabel(
-					keyValuePair.getKey(),
-					ddmFormFieldRenderingContext.getLocale(),
+					optionValue, ddmFormFieldRenderingContext.getLocale(),
 					keyValuePair.getValue());
 			}
 		}
@@ -144,11 +159,76 @@ public class DDMFormFieldOptionsFactoryImpl
 		return ddmFormFieldOptions;
 	}
 
+	protected String encryptOptionValue(
+		String ddmDataProviderInstanceId, Key key, String optionValue) {
+
+		String text = String.format(
+			"%s#%s", ddmDataProviderInstanceId, optionValue);
+
+		try {
+			String encryptedText = Encryptor.encrypt(key, text);
+
+			return String.format("%s#%s", optionValue, encryptedText);
+		}
+		catch (Exception e) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(e, e);
+			}
+
+			return optionValue;
+		}
+	}
+
+	protected Key getKey(
+		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
+
+		boolean encryptionEnabled = GetterUtil.getBoolean(
+			ddmFormFieldRenderingContext.getProperty("encryptionEnabled"));
+
+		if (!encryptionEnabled) {
+			return null;
+		}
+
+		HttpServletRequest request = portal.getOriginalServletRequest(
+			ddmFormFieldRenderingContext.getHttpServletRequest());
+
+		HttpSession session = request.getSession();
+
+		Key key = null;
+
+		try {
+			String serializedKey = (String)session.getAttribute(_KEY);
+
+			if (serializedKey == null) {
+				key = Encryptor.generateKey();
+
+				serializedKey = Encryptor.serializeKey(key);
+
+				session.setAttribute(_KEY, serializedKey);
+			}
+			else {
+				key = Encryptor.deserializeKey(serializedKey);
+			}
+		}
+		catch (Exception e) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(e, e);
+			}
+		}
+
+		return key;
+	}
+
 	@Reference
 	protected DDMDataProviderContextFactory ddmDataProviderContextFactory;
 
 	@Reference
 	protected DDMDataProviderInvoker ddmDataProviderInvoker;
+
+	@Reference
+	protected Portal portal;
+
+	private static final String _KEY = "DDM_SERIALIZED_KEY";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		DDMFormFieldOptionsFactoryImpl.class);

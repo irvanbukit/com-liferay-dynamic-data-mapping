@@ -4,3 +4,6 @@ Bundle-Version: 2.1.0
 Export-Package: com.liferay.dynamic.data.mapping.form.field.type
 Liferay-Releng-Module-Group-Description:
 Liferay-Releng-Module-Group-Title: Dynamic Data Mapping
+-includeresource:\
+	@com.liferay.util.java-[0-9]*.jar!/com/liferay/util/Encryptor.class,\
+	@com.liferay.util.java-[0-9]*.jar!/com/liferay/util/EncryptorException.class
