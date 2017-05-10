@@ -96,10 +96,10 @@ public class SelectDDMFormFieldValueValidator
 		try {
 			return Encryptor.decrypt(key, encryptedOptionValue);
 		}
-		catch (EncryptorException ee) {
+		catch (Exception e) {
 			throw new DDMFormFieldValueValidationException(
 				String.format(
-					"Invalid value found for select field \"%s\"",
+					"Invalid value encrypted found for select field \"%s\"",
 					ddmFormField.getName()));
 		}
 	}
@@ -112,6 +112,9 @@ public class SelectDDMFormFieldValueValidator
 		}
 
 		String serializedKey = GetterUtil.getString(session.getAttribute(_KEY));
+
+		System.out.println("serializedKey: " + serializedKey);
+
 
 		if (Validator.isNotNull(serializedKey)) {
 			return Encryptor.deserializeKey(serializedKey);
@@ -182,18 +185,22 @@ public class SelectDDMFormFieldValueValidator
 			if (selectedValueArray.length != 2) {
 				throw new DDMFormFieldValueValidationException(
 					String.format(
-						"Invalid value found for select field \"%s\"",
+						"Invalid pattern value found for select field \"%s\"",
 						ddmFormField.getName()));
 			}
 
 			String decryptedSelectedValue = decryptSelectedValue(
 				ddmFormField, key, selectedValueArray[1]);
 
-			String ddmDataProviderInstanceId = GetterUtil.getString(
-				ddmFormField.getProperty("ddmDataProviderInstanceId"));
+			System.out.println("decrypted value " + decryptedSelectedValue);
+
+			Object ddmDataProviderInstanceId = ddmFormField.getProperty(
+				"ddmDataProviderInstanceId");
 
 			String expectedSelectedValue = String.format(
 				"%s#%s", ddmDataProviderInstanceId, selectedValueArray[0]);
+
+			System.out.println("expectedSelectedValue  " + expectedSelectedValue);
 
 			if (!expectedSelectedValue.equals(decryptedSelectedValue)) {
 				throw new DDMFormFieldValueValidationException(

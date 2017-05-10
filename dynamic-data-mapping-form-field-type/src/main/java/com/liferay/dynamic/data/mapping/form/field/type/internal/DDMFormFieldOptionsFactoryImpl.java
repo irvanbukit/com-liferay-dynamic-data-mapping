@@ -182,13 +182,6 @@ public class DDMFormFieldOptionsFactoryImpl
 	protected Key getKey(
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
-		boolean encryptionEnabled = GetterUtil.getBoolean(
-			ddmFormFieldRenderingContext.getProperty("encryptionEnabled"));
-
-		if (!encryptionEnabled) {
-			return null;
-		}
-
 		HttpServletRequest request = portal.getOriginalServletRequest(
 			ddmFormFieldRenderingContext.getHttpServletRequest());
 
