@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.util.List;
 import java.util.Map;
@@ -137,9 +138,11 @@ public class DDMDataProviderInvokerImpl implements DDMDataProviderInvoker {
 			ddmDataProviderInstanceService.fetchDataProviderInstanceByUuid(
 				ddmDataProviderInstanceId);
 
-		if (ddmDataProviderInstance == null) {
+		if ((ddmDataProviderInstance == null) &&
+			Validator.isNumber(ddmDataProviderInstanceId)) {
+
 			ddmDataProviderInstance =
-				ddmDataProviderInstanceService.getDataProviderInstance(
+				ddmDataProviderInstanceService.fetchDataProviderInstance(
 					Long.valueOf(ddmDataProviderInstanceId));
 		}
 
