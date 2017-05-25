@@ -118,7 +118,7 @@ public class DDMFormTemplateContextFactoryImpl
 
 		templateContext.put("containerId", containerId);
 
-		templateContext.put(
+		ddmFormRenderingContext.addProperty(
 			"dataProviderSettings",
 			_ddmFormTemplateContextFactoryHelper.getDataProviderSettings(
 				ddmForm));
