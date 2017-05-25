@@ -18,6 +18,7 @@ import com.liferay.dynamic.data.mapping.data.provider.DDMDataProviderInvoker;
 import com.liferay.dynamic.data.mapping.data.provider.DDMDataProviderRequest;
 import com.liferay.dynamic.data.mapping.data.provider.DDMDataProviderResponse;
 import com.liferay.dynamic.data.mapping.data.provider.DDMDataProviderResponseOutput;
+import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -72,7 +73,9 @@ public class DDMDataProviderPaginatorServlet extends HttpServlet {
 			inputParameterName -> {
 				ddmDataProviderRequest.queryString(
 					inputParameterName,
-					inputParametersJSONObject.getString(inputParameterName));
+					getInputParameterValue(
+						inputParametersJSONObject.getString(
+							inputParameterName)));
 			});
 	}
 
@@ -174,6 +177,21 @@ public class DDMDataProviderPaginatorServlet extends HttpServlet {
 		}
 
 		return _jsonFactory.createJSONObject(inputParameters);
+	}
+
+	protected String getInputParameterValue(String value) {
+		try {
+			JSONArray jsonArray = _jsonFactory.createJSONArray(value);
+
+			return jsonArray.getString(0);
+		}
+		catch (JSONException jsone) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(jsone);
+			}
+
+			return value;
+		}
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
