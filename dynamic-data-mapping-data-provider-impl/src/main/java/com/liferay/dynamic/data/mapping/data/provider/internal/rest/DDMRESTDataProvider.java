@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.cache.MultiVMPool;
 import com.liferay.portal.kernel.cache.PortalCache;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringPool;
@@ -182,6 +183,16 @@ public class DDMRESTDataProvider implements DDMDataProvider {
 					keys = documentContext.read(normalizedKeyPath);
 				}
 
+				int start = GetterUtil.getInteger(
+					ddmDataProviderRequest.getParameter("paginationStart"));
+
+				int end = GetterUtil.getInteger(
+					ddmDataProviderRequest.getParameter("paginationEnd"),
+					_PAGE_SIZE);
+
+				keys = ListUtil.subList(keys, start, end);
+				values = ListUtil.subList(values, start, end);
+
 				List<KeyValuePair> keyValuePairs = new ArrayList<>();
 
 				for (int i = 0; i < values.size(); i++) {
@@ -189,19 +200,6 @@ public class DDMRESTDataProvider implements DDMDataProvider {
 					String value = String.valueOf(values.get(i));
 
 					keyValuePairs.add(new KeyValuePair(key, value));
-				}
-
-				if (ddmRESTDataProviderSettings.pagination()) {
-					int start = Integer.valueOf(
-						ddmDataProviderRequest.getParameter("paginationStart"));
-
-					int end = Integer.valueOf(
-						ddmDataProviderRequest.getParameter("paginationEnd"));
-
-					if (keyValuePairs.size() > (end - start)) {
-						keyValuePairs = ListUtil.subList(
-							keyValuePairs, start, end);
-					}
 				}
 
 				ddmDataProviderResponseOutputs.add(
@@ -306,16 +304,25 @@ public class DDMRESTDataProvider implements DDMDataProvider {
 		}
 
 		if (ddmRESTDataProviderSettings.pagination()) {
-			httpRequest.query(
-				ddmRESTDataProviderSettings.paginationEndParameterName(),
+			int paginationStart = GetterUtil.getInteger(
 				ddmDataProviderRequest.getParameter("paginationStart"));
+
+			int paginationEnd = GetterUtil.getInteger(
+				ddmDataProviderRequest.getParameter("paginationEnd"),
+				_PAGE_SIZE);
+
+			httpRequest.query(
+				ddmRESTDataProviderSettings.paginationStartParameterName(),
+				paginationStart);
 			httpRequest.query(
 				ddmRESTDataProviderSettings.paginationEndParameterName(),
-				ddmDataProviderRequest.getParameter("paginationEnd"));
+				paginationEnd);
 		}
 
 		httpRequest.query(ddmDataProviderRequest.getParameters());
 	}
+
+	private static final int _PAGE_SIZE = 20;
 
 	private JSONFactory _jsonFactory;
 	private PortalCache<String, DDMRESTDataProviderResult> _portalCache;
