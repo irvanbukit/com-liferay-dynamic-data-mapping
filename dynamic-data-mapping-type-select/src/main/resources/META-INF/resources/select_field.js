@@ -1,6 +1,8 @@
 AUI.add(
 	'liferay-ddm-form-field-select',
 	function(A) {
+		var AObject = A.Object;
+
 		var CSS_ACTIVE = A.getClassName('active');
 
 		var CSS_DROP_CHOSEN = A.getClassName('drop', 'chosen');
@@ -26,6 +28,8 @@ AUI.add(
 		var CSS_SELECT_TRIGGER_ACTION = A.getClassName('select', 'field', 'trigger');
 
 		var Lang = A.Lang;
+
+		var PAGINATION_PAGE_SIZE = 20;
 
 		var TPL_OPTION = '<option>{label}</option>';
 
@@ -85,11 +89,14 @@ AUI.add(
 
 						instance._open = false;
 
+						instance._hasMoreOption = true;
+
 						instance._createBadgeTooltip();
 
 						instance._eventHandlers.push(
 							A.one('doc').after('click', A.bind(instance._afterClickOutside, instance)),
-							instance.bindContainerEvent('click', instance._handleContainerClick, '.' + CSS_FORM_FIELD_CONTAINER)
+							instance.bindContainerEvent('click', instance._handleContainerClick, '.' + CSS_FORM_FIELD_CONTAINER),
+							instance.on('optionsChange', A.bind(instance._onOptionsChange, instance))
 						);
 					},
 
@@ -195,11 +202,14 @@ AUI.add(
 					openList: function() {
 						var instance = this;
 
-						instance._getSelectTriggerAction().addClass(CSS_ACTIVE);
+						var options = instance.get('options');
 
-						instance.get('container').one('.' + CSS_DROP_CHOSEN).removeClass(CSS_HIDE);
-
-						instance._open = true;
+						if (options.length == 0 && instance._hasDataProviderSettings() && instance._tryGetMoreOption()) {
+							instance._loadMoreOptions(instance._doOpenList);
+						}
+						else {
+							instance._doOpenList();
+						}
 					},
 
 					render: function() {
@@ -229,7 +239,7 @@ AUI.add(
 						var listNode = instance.get('container').one('.' + CSS_SELECT_RESULTS_CHOSEN);
 
 						if (listNode) {
-							listNode.on('scroll', instance._handleScrollList, instance);
+							listNode.on('scroll', A.debounce(instance._handleScrollList, 300), instance);
 						}
 
 						return instance;
@@ -292,6 +302,16 @@ AUI.add(
 								visible: false
 							}
 						);
+					},
+
+					_doOpenList: function() {
+						var instance = this;
+
+						instance._getSelectTriggerAction().addClass(CSS_ACTIVE);
+
+						instance.get('container').one('.' + CSS_DROP_CHOSEN).removeClass(CSS_HIDE);
+
+						instance._open = true;
 					},
 
 					_getContextValue: function() {
@@ -450,6 +470,14 @@ AUI.add(
 						}
 					},
 
+					_getDataProviderSettings: function() {
+						var instance = this;
+
+						var context = instance.get('context');
+
+						return context.dataProviderSettings;
+					},
+
 					_hasOption: function(value) {
 						var instance = this;
 
@@ -503,10 +531,133 @@ AUI.add(
 						return false;
 					},
 
+					_loadMoreOptions: function(callback) {
+						var instance = this;
+
+						var container = instance.get('container');
+
+						var loadingIcon = container.one('.loading-more-options');
+
+						loadingIcon.show();
+
+						var formContext = instance.getRoot().get('context');
+
+						A.io.request(
+							formContext.dataProviderPaginatorServletURL,
+							{
+								data: instance._getDataProviderPaginationPayload(),
+								method: 'POST',
+								on: {
+									success: function(event, id, xhr) {
+										var newOptions = JSON.parse(xhr.responseText) || [];
+
+										if (newOptions.length > 0) {
+											var options = instance.get('options');
+
+											var currentOptionsSize = options.length;
+
+											Array.prototype.push.apply(options, newOptions);
+
+											if (currentOptionsSize == 0) {
+												instance._renderList(options);
+											}
+											else {
+												instance._renderMoreOptionsList(newOptions);
+											}
+
+											loadingIcon.hide();
+
+											if (callback) {
+												callback.call(instance);
+											}
+										}
+										else {
+											loadingIcon.hide();
+										}
+
+										if (newOptions.length < PAGINATION_PAGE_SIZE) {
+											instance._hasMoreOption = false;
+										}
+
+									}
+								}
+							}
+						);
+					},
+
+					_onOptionsChange: function(event) {
+						var instance = this;
+
+						if (!instance._hasDataProviderSettings()) {
+							return;
+						}
+
+						var dataProviderSettings = instance._getDataProviderSettings();
+
+						if (AObject.isEmpty(dataProviderSettings.inputParameters)) {
+							event.preventDefault();
+						}
+						else {
+							instance._hasMoreOption = true;
+						}
+
+					},
+
 					_onScrollBottom: function() {
 						var instance = this;
 
-						console.log('Bottom fire!!!');
+						if (instance._hasDataProviderSettings() && instance._tryGetMoreOption()) {
+							instance._loadMoreOptions();
+						}
+					},
+
+					_tryGetMoreOption: function() {
+						var instance = this;
+
+						return instance._hasMoreOption;
+					},
+
+					_getDataProviderPaginationPayload: function() {
+						var instance = this;
+
+						var dataProviderSettings = instance._getDataProviderSettings();
+
+						var optionsLength = instance.get('options').length || 0;
+
+						var payload = {
+							dataProviderInstanceUUID: dataProviderSettings.dataProviderInstanceUUID,
+							end: optionsLength + PAGINATION_PAGE_SIZE,
+							outputParameterName: dataProviderSettings.outputParameterName,
+							start: optionsLength
+						};
+
+						var inputParametersMapper = dataProviderSettings.inputParameters;
+
+						var form = instance.getRoot();
+
+						var inputParameters = {};
+
+						form.eachField(
+							function(field) {
+
+								for (var inputParameterName in inputParametersMapper) {
+									if (inputParametersMapper[inputParameterName] === field.get('fieldName')) {
+										inputParameters[inputParameterName] = field.get('value');
+									}
+								}
+
+							}
+						);
+
+						payload.inputParameters = JSON.stringify(inputParameters);
+
+						return payload;
+					},
+
+					_hasDataProviderSettings: function() {
+						var instance = this;
+
+						return !!instance._getDataProviderSettings();
 					},
 
 					_removeBadge: function(value) {

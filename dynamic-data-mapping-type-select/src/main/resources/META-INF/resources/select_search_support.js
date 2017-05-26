@@ -29,7 +29,7 @@ AUI.add(
 
 				var searchInputNode = instance._getInputSearch();
 
-				var options = instance.get('context').options;
+				var options = instance.get('options');
 
 				instance._renderList(options);
 
@@ -108,6 +108,21 @@ AUI.add(
 				);
 
 				instance.get('container').one('.results-chosen').setHTML(template);
+			},
+
+			_renderMoreOptionsList: function(options) {
+				var instance = this;
+
+				var template = instance._getTemplate(
+					{
+						multiple: instance.get('multiple'),
+						options: options,
+						strings: instance.get('strings'),
+						value: instance.getValueSelected()
+					}
+				);
+
+				instance.get('container').one('.results-chosen').append(template);
 			},
 
 			_visitDOMListItems: function(callBack) {
