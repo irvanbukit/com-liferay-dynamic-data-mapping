@@ -75,6 +75,7 @@ public class DDMFormTemplateContextFactoryTest extends PowerMockito {
 
 		setUpDDM();
 		setUpDDMFormContextProviderServlet();
+		setUpDDMDataProviderPaginatorServlet();
 		setUpDDMFormEvaluator();
 		setUpDDMFormFieldTypeServicesTracker();
 		setUpDDMFormFieldTypesJSONSerializer();
@@ -384,6 +385,38 @@ public class DDMFormTemplateContextFactoryTest extends PowerMockito {
 
 	protected void setUpDDM() throws Exception {
 		setDeclaredField(_ddmFormTemplateContextFactory, "_ddm", new DDMImpl());
+	}
+
+	protected void setUpDDMDataProviderPaginatorServlet() throws Exception {
+		Servlet ddmDataProviderPaginatorServlet = mock(Servlet.class);
+
+		ServletConfig ddmFormContextProviderServletConfig = mock(
+			ServletConfig.class);
+
+		when(
+			ddmDataProviderPaginatorServlet.getServletConfig()
+		).thenReturn(
+			ddmFormContextProviderServletConfig
+		);
+
+		ServletContext ddmDataProviderPaginatorServletContext = mock(
+			ServletContext.class);
+
+		when(
+			ddmFormContextProviderServletConfig.getServletContext()
+		).thenReturn(
+			ddmDataProviderPaginatorServletContext
+		);
+
+		when(
+			ddmDataProviderPaginatorServletContext.getContextPath()
+		).thenReturn(
+			"CONTEXT_PATH"
+		);
+
+		setDeclaredField(
+			_ddmFormTemplateContextFactory, "_ddmDataProviderPaginatorServlet",
+			ddmDataProviderPaginatorServlet);
 	}
 
 	protected void setUpDDMFormContextProviderServlet() throws Exception {

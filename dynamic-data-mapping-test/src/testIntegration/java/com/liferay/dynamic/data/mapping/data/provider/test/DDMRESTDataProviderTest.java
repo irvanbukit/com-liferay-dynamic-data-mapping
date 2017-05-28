@@ -30,7 +30,6 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
@@ -63,7 +62,7 @@ public class DDMRESTDataProviderTest {
 	}
 
 	@Test
-	public void testGetCountries() throws Exception {
+	public void testDataProviderShouldPaginateResults() throws Exception {
 		Class<?> ddmDataProviderSettings = _ddmDataProvider.getSettings();
 
 		com.liferay.dynamic.data.mapping.model.DDMForm ddmForm =
@@ -129,9 +128,7 @@ public class DDMRESTDataProviderTest {
 		List<KeyValuePair> actualData = ddmDataProviderResponseOutput.getValue(
 			List.class);
 
-		List<KeyValuePair> expectedData = createExpectedData();
-
-		Assert.assertTrue(actualData.containsAll(expectedData));
+		Assert.assertEquals(actualData.toString(), 20, actualData.size());
 	}
 
 	@Test
@@ -213,17 +210,6 @@ public class DDMRESTDataProviderTest {
 
 		Assert.assertEquals("48", actualKeyValuePair.getKey());
 		Assert.assertEquals("Brazil", (String)actualKeyValuePair.getValue());
-	}
-
-	protected List<KeyValuePair> createExpectedData() {
-		List<KeyValuePair> expectedData = new ArrayList<>();
-
-		expectedData.add(new KeyValuePair("3", "France"));
-		expectedData.add(new KeyValuePair("15", "Spain"));
-		expectedData.add(new KeyValuePair("19", "United States"));
-		expectedData.add(new KeyValuePair("48", "Brazil"));
-
-		return expectedData;
 	}
 
 	private DDMDataProvider _ddmDataProvider;
