@@ -205,7 +205,11 @@ AUI.add(
 						var options = instance.get('options');
 
 						if (options.length == 0 && instance._hasDataProviderSettings() && instance._tryGetMoreOption()) {
-							instance._loadMoreOptions(instance._doOpenList);
+							instance.get('container').one('.results-chosen').html('');
+
+							instance._doOpenList();
+
+							instance._loadMoreOptions();
 						}
 						else {
 							instance._doOpenList();
@@ -551,32 +555,27 @@ AUI.add(
 									success: function(event, id, xhr) {
 										var newOptions = JSON.parse(xhr.responseText) || [];
 
-										if (newOptions.length > 0) {
-											var options = instance.get('options');
-
-											var currentOptionsSize = options.length;
-
-											Array.prototype.push.apply(options, newOptions);
-
-											if (currentOptionsSize == 0) {
-												instance._renderList(options);
-											}
-											else {
-												instance._renderMoreOptionsList(newOptions);
-											}
-
-											loadingIcon.hide();
-
-											if (callback) {
-												callback.call(instance);
-											}
-										}
-										else {
-											loadingIcon.hide();
-										}
-
 										if (newOptions.length < PAGINATION_PAGE_SIZE) {
 											instance._hasMoreOption = false;
+										}
+
+										var options = instance.get('options');
+
+										var currentOptionsSize = options.length;
+
+										Array.prototype.push.apply(options, newOptions);
+
+										if (currentOptionsSize == 0) {
+											instance._renderList(options);
+										}
+										else {
+											instance._renderMoreOptionsList(newOptions);
+										}
+
+										loadingIcon.hide();
+
+										if (callback) {
+											callback.call(instance);
 										}
 
 									}
