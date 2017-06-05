@@ -60,20 +60,12 @@ AUI.add(
 				var result = event.result;
 
 				if (result && Lang.isObject(result)) {
-					var visitor = instance.get('visitor');
+					var fieldContexts = result.fields;
 
-					instance.set('pagesState', result);
-
-					visitor.set('pages', result);
-
-					visitor.set(
-						'fieldHandler',
+					fieldContexts.forEach(
 						function(fieldContext) {
-							var qualifiedName = fieldContext.name;
-
-							var name = Util.getFieldNameFromQualifiedName(qualifiedName);
-
-							var instanceId = Util.getInstanceIdFromQualifiedName(qualifiedName);
+							var name = fieldContext.name;
+							var instanceId = fieldContext.instanceId;
 
 							var field = instance.getField(name, instanceId);
 
@@ -110,8 +102,6 @@ AUI.add(
 							field.set('context', fieldContext);
 						}
 					);
-
-					visitor.visit();
 				}
 				else {
 					var strings = instance.get('strings');

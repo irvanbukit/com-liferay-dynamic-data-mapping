@@ -122,36 +122,102 @@ AUI.add(
 
 						var callback = event.callback;
 
-						var form = instance.get('form');
-
-						instance._request = A.io.request(
-							instance.get('evaluatorURL'),
-							{
-								data: form.getEvaluationPayload(),
-								method: 'POST',
-								on: {
-									failure: function(event) {
-										if (event.details[1].statusText !== 'abort') {
-											callback.call(instance, null);
-										}
-										else {
-											callback.call(instance, {});
-										}
-									},
-									success: function(event, id, xhr) {
-										var result = xhr.responseText;
-
-										callback.call(instance, JSON.parse(result));
+						instance._getRequestMessageType("DDMFormEvaluationRequest")
+								.then(A.bind(instance._getRequestMessage, instance))
+								.then(A.bind(instance._makeRequest, instance))
+								.then(A.bind(instance._decodeResponse, instance))
+								.then(A.bind(callback, instance))
+								.catch(function(event) {
+									if (event.details[1].statusText !== 'abort') {
+										callback.call(instance, null);
 									}
-								}
-							}
-						);
+									else {
+									 	callback.call(instance, {});
+									}
+								});
 					},
 
 					_getEnabled: function(enabled) {
 						var instance = this;
 
 						return enabled && !!instance.get('evaluatorURL');
+					},
+
+					_getRequestMessage: function(requestMessageType) {
+						var instance = this;
+
+						var form = instance.get('form');
+
+						var payload = form.getEvaluationPayload();
+
+						return new A.Promise(function (resolve) {
+							var message = requestMessageType.fromObject(payload);
+
+							resolve(requestMessageType.encode(message).finish());
+						});
+					},
+
+					_decodeResponse: function(response) {
+						var instance = this;
+
+						return instance._getRequestMessageType("DDMFormEvaluationResponse")
+								.then(function(responseMessageType) {
+									var decodedResponse = responseMessageType.decode(new Uint8Array(response));
+
+									return decodedResponse;
+								});
+					},
+
+					_getRequestMessageType: function(type) {
+						var instance = this;
+
+						return new A.Promise(function(resolve, reject) {
+							if (instance._rootMessageType) {
+								resolve(instance._rootMessageType.lookupType(type));
+							}
+							else {
+								Liferay.DDM.protobuf.load("/o/dynamic-data-mapping-form-renderer/protobuf/ddm-form-evaluation.proto", function(error, root) {
+									if (error) {
+										reject(error);
+									}
+
+									instance._rootMessageType = root;
+
+									resolve(root.lookupType(type));
+								});
+							}
+						})
+					},
+
+					_makeRequest: function(data) {
+						var instance = this;
+
+						return new A.Promise(function (resolve, reject) {
+							var request = new A.IO.transports.xhr();
+
+							request.open('POST', instance.get('evaluatorURL'));
+							request.setRequestHeader('Content-Type', 'application/x-protobuf');
+							request.responseType = "arraybuffer";
+
+							request.onload = function() {
+								if (request.aborted) {
+									request.onerror();
+									return;
+								}
+
+								resolve(request.response);
+							};
+
+							request.onerror = function() {
+								var error = new Error('');
+
+								error.request = request;
+
+								reject(error)
+							};
+
+							request.send(data);
+						});
 					},
 
 					_start: function(event) {
@@ -188,6 +254,6 @@ AUI.add(
 	},
 	'',
 	{
-		requires: ['aui-component', 'aui-io-request']
+		requires: ['io-upload-iframe', 'aui-component', 'aui-promise', 'aui-io-request', 'liferay-ddm-protobufjs']
 	}
 );

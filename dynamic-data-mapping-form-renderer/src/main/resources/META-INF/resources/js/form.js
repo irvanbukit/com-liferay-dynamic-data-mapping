@@ -80,10 +80,30 @@ AUI.add(
 					getEvaluationPayload: function() {
 						var instance = this;
 
+						var formContext = instance.get('context');
+
+						var fieldContexts = [];
+
+						var visitor = instance.get('visitor');
+
+						visitor.set('pages', formContext.pages);
+
+						visitor.set(
+							'fieldHandler',
+							function(fieldContext) {
+								fieldContexts.push(fieldContext);
+							}
+						);
+
+						visitor.visit();
+
 						return {
+							form: {
+								"fields": fieldContexts,
+								"rules": formContext.rules
+							},
 							p_auth: Liferay.authToken,
 							portletNamespace: instance.get('portletNamespace'),
-							serializedFormContext: JSON.stringify(instance.get('context'))
 						};
 					},
 
