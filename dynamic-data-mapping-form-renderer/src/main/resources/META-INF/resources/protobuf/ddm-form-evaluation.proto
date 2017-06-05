@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+option java_outer_classname = "DDMFormEvaluationMessages";
+option java_package = "com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport";
+
+message DDMFormEvaluationRequest {
+    string p_auth = 1;
+    string portletNamespace = 2;
+    Form form = 3;
+
+    message Form {
+        repeated Field fields = 1;
+        repeated Rule rules = 2;
+
+        message Field {
+            string dataType = 1;
+            string fieldName = 2;
+            string instanceId = 3;
+            bool localizable = 4;
+            string name = 5;
+            repeated Field nestedFields = 6;
+            repeated Option options = 7;
+            bool readOnly = 8;
+            bool required = 9;
+            string type = 10;
+            string value = 11;
+            string visibilityExpression = 12;
+            bool visible = 13;
+            Validation validation = 14;
+
+            message Option {
+                string label = 1;
+                string value = 2;
+            }
+
+            message Validation {
+                string expression = 1;
+                string errorMessage = 2;
+            }
+        }
+
+        message Rule {
+            string condition = 1;
+            repeated string actions = 2;
+            bool enabled = 3;
+        }
+
+    }
+}
+
+message DDMFormEvaluationResponse {
+    repeated Field fields = 1;
+
+    message Field {
+        string errorMessage = 1;
+        string instanceId = 2;
+        string name = 3;
+        repeated Option options = 4;
+        bool readOnly = 5;
+        bool required = 6;
+        bool valid = 7;
+        string value = 8;
+        bool visible = 9;
+
+        message Option {
+            string label = 1;
+            string value = 2;
+        }
+
+    }
+
+}
