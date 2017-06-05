@@ -14,28 +14,29 @@
 
 package com.liferay.dynamic.data.mapping.form.renderer.internal.servlet;
 
+import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluationResult;
 import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluator;
-import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTypeServicesTracker;
-import com.liferay.dynamic.data.mapping.form.renderer.DDMFormRenderingContext;
-import com.liferay.dynamic.data.mapping.form.renderer.internal.DDMFormPagesTemplateContextFactory;
+import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluatorContext;
+import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormFieldEvaluationResult;
+import com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationRequest;
+import com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationResponse;
+import com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationResponse.Builder;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
-import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
-import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
-import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONFactory;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.json.JSONSerializer;
+import com.liferay.dynamic.data.mapping.model.DDMFormField;
+import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
+import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
-import com.liferay.portal.kernel.util.ContentTypes;
-import com.liferay.portal.kernel.util.LocaleThreadLocal;
+import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.util.ParamUtil;
 
 import java.io.IOException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
@@ -60,44 +61,68 @@ import org.osgi.service.component.annotations.Reference;
 )
 public class DDMFormContextProviderServlet extends HttpServlet {
 
-	protected List<Object> createDDMFormPagesTemplateContext(
-		HttpServletRequest request, HttpServletResponse response,
-		String portletNamespace) {
+	protected void addFieldBuilderOptions(
+		DDMFormFieldEvaluationResult ddmFormFieldEvaluationResult,
+		DDMFormFieldOptions defaultDDMFormFieldOptions,
+		DDMFormEvaluationResponse.Field.Builder fieldBuilder) {
+
+		List<KeyValuePair> keyValuePairs =
+			ddmFormFieldEvaluationResult.getProperty("options");
+
+		if (keyValuePairs == null) {
+			keyValuePairs = new ArrayList<>();
+
+			for (String value : defaultDDMFormFieldOptions.getOptionsValues()) {
+				LocalizedValue label =
+					defaultDDMFormFieldOptions.getOptionLabels(value);
+
+				keyValuePairs.add(
+					new KeyValuePair(value, label.getString(Locale.US)));
+			}
+		}
+
+		for (KeyValuePair keyValuePair : keyValuePairs) {
+			DDMFormEvaluationResponse.Field.Option.Builder optionBuilder =
+				DDMFormEvaluationResponse.Field.Option.newBuilder();
+
+			optionBuilder.setLabel(keyValuePair.getValue());
+			optionBuilder.setValue(keyValuePair.getKey());
+
+			fieldBuilder.addOptions(optionBuilder);
+		}
+	}
+
+	protected DDMFormEvaluationResponse createDDMFormEvaluationResponse(
+		HttpServletRequest request) {
 
 		try {
-			DDMFormRenderingContext ddmFormRenderingContext =
-				createDDMFormRenderingContext(
-					request, response, Locale.US, portletNamespace);
+			long groupId = ParamUtil.getLong(request, "groupId");
+
+			DDMFormEvaluationRequest ddmFormEvaluationRequest =
+				DDMFormEvaluationRequest.parseFrom(request.getInputStream());
 
 			DDMFormTemplateContextProcessor ddmFormTemplateContextProcessor =
-				createDDMFormTemplateContextProcessor(request);
-
-			DDMFormValues ddmFormValues =
-				ddmFormTemplateContextProcessor.getDDMFormValues();
-
-			ddmFormRenderingContext.setDDMFormValues(ddmFormValues);
-
-			_prepareThreadLocal(Locale.US);
+				new DDMFormTemplateContextProcessor(ddmFormEvaluationRequest);
 
 			DDMForm ddmForm = ddmFormTemplateContextProcessor.getDDMForm();
 
-			DDMFormLayout ddmFormLayout =
-				ddmFormTemplateContextProcessor.getDDMFormLayout();
+			DDMFormEvaluatorContext ddmFormEvaluatorContext =
+				new DDMFormEvaluatorContext(
+					ddmForm, ddmFormTemplateContextProcessor.getDDMFormValues(),
+					Locale.US);
 
-			DDMFormPagesTemplateContextFactory
-				ddmFormPagesTemplateContextFactory =
-					new DDMFormPagesTemplateContextFactory(
-						ddmForm, ddmFormLayout, ddmFormRenderingContext);
+			ddmFormEvaluatorContext.addProperty("groupId", groupId);
+			ddmFormEvaluatorContext.addProperty("request", request);
 
-			ddmFormPagesTemplateContextFactory.setDDMFormEvaluator(
-				_ddmFormEvaluator);
-			ddmFormPagesTemplateContextFactory.
-				setDDMFormFieldTypeServicesTracker(
-					_ddmFormFieldTypeServicesTracker);
+			DDMFormEvaluationResult ddmFormEvaluationResult =
+				_ddmFormEvaluator.evaluate(ddmFormEvaluatorContext);
 
-			return ddmFormPagesTemplateContextFactory.create();
+			return createDDMFormEvaluationResponse(
+				ddmForm.getDDMFormFieldsMap(true), ddmFormEvaluationResult);
 		}
 		catch (Exception e) {
+			e.printStackTrace();
+
 			if (_log.isDebugEnabled()) {
 				_log.debug(e, e);
 			}
@@ -106,32 +131,53 @@ public class DDMFormContextProviderServlet extends HttpServlet {
 		return null;
 	}
 
-	protected DDMFormRenderingContext createDDMFormRenderingContext(
-		HttpServletRequest request, HttpServletResponse response, Locale locale,
-		String portletNamespace) {
+	protected DDMFormEvaluationResponse createDDMFormEvaluationResponse(
+		Map<String, DDMFormField> ddmFormFieldsMap,
+		DDMFormEvaluationResult ddmFormEvaluationResult) {
 
-		DDMFormRenderingContext ddmFormRenderingContext =
-			new DDMFormRenderingContext();
+		DDMFormEvaluationResponse.Builder ddmFormEvaluationResponseBuilder =
+			DDMFormEvaluationResponse.newBuilder();
 
-		ddmFormRenderingContext.setHttpServletRequest(request);
-		ddmFormRenderingContext.setHttpServletResponse(response);
-		ddmFormRenderingContext.setLocale(locale);
-		ddmFormRenderingContext.setPortletNamespace(portletNamespace);
+		for (DDMFormFieldEvaluationResult ddmFormFieldEvaluationResult :
+				ddmFormEvaluationResult.getDDMFormFieldEvaluationResults()) {
 
-		return ddmFormRenderingContext;
+			DDMFormEvaluationResponse.Field field =
+				createFieldEvaluationResponse(
+					ddmFormFieldsMap.get(
+						ddmFormFieldEvaluationResult.getName()),
+					ddmFormFieldEvaluationResult);
+
+			ddmFormEvaluationResponseBuilder.addFields(field);
+		}
+
+		return ddmFormEvaluationResponseBuilder.build();
 	}
 
-	protected DDMFormTemplateContextProcessor
-			createDDMFormTemplateContextProcessor(HttpServletRequest request)
-		throws Exception {
+	protected DDMFormEvaluationResponse.Field
+		createFieldEvaluationResponse(
+			DDMFormField ddmFormField,
+			DDMFormFieldEvaluationResult ddmFormFieldEvaluationResult) {
 
-		String serializedFormContext = ParamUtil.getString(
-			request, "serializedFormContext");
+		DDMFormEvaluationResponse.Field.Builder fieldBuilder =
+			DDMFormEvaluationResponse.Field.newBuilder();
 
-		JSONObject jsonObject = _jsonFactory.createJSONObject(
-			serializedFormContext);
+		fieldBuilder.setName(ddmFormFieldEvaluationResult.getName());
+		fieldBuilder.setInstanceId(
+			ddmFormFieldEvaluationResult.getInstanceId());
+		fieldBuilder.setReadOnly(ddmFormFieldEvaluationResult.isReadOnly());
+		fieldBuilder.setRequired(ddmFormFieldEvaluationResult.isRequired());
+		fieldBuilder.setValid(ddmFormFieldEvaluationResult.isValid());
+		fieldBuilder.setVisible(ddmFormFieldEvaluationResult.isVisible());
+		fieldBuilder.setErrorMessage(
+			ddmFormFieldEvaluationResult.getErrorMessage());
+		fieldBuilder.setValue(
+			ddmFormFieldEvaluationResult.getValue().toString());
 
-		return new DDMFormTemplateContextProcessor(jsonObject);
+		addFieldBuilderOptions(
+			ddmFormFieldEvaluationResult, ddmFormField.getDDMFormFieldOptions(),
+			fieldBuilder);
+
+		return fieldBuilder.build();
 	}
 
 	@Override
@@ -139,33 +185,20 @@ public class DDMFormContextProviderServlet extends HttpServlet {
 			HttpServletRequest request, HttpServletResponse response)
 		throws IOException, ServletException {
 
-		String portletNamespace = ParamUtil.getString(
-			request, "portletNamespace");
+		DDMFormEvaluationResponse ddmFormEvaluationResponse =
+			createDDMFormEvaluationResponse(request);
 
-		List<Object> ddmFormPagesTemplateContext =
-			createDDMFormPagesTemplateContext(
-				request, response, portletNamespace);
-
-		if (ddmFormPagesTemplateContext == null) {
+		if (ddmFormEvaluationResponse == null) {
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST);
 
 			return;
 		}
 
-		JSONSerializer jsonSerializer = _jsonFactory.createJSONSerializer();
-
-		response.setContentType(ContentTypes.APPLICATION_JSON);
+		response.setContentType("application/x-protobuf");
 		response.setStatus(HttpServletResponse.SC_OK);
 
 		ServletResponseUtil.write(
-			response,
-			jsonSerializer.serializeDeep(ddmFormPagesTemplateContext));
-	}
-
-	private void _prepareThreadLocal(Locale locale)
-		throws Exception, PortalException {
-
-		LocaleThreadLocal.setThemeDisplayLocale(locale);
+			response, ddmFormEvaluationResponse.toByteArray());
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -175,11 +208,5 @@ public class DDMFormContextProviderServlet extends HttpServlet {
 
 	@Reference
 	private DDMFormEvaluator _ddmFormEvaluator;
-
-	@Reference
-	private DDMFormFieldTypeServicesTracker _ddmFormFieldTypeServicesTracker;
-
-	@Reference
-	private JSONFactory _jsonFactory;
 
 }
