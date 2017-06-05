@@ -1,7 +1,29 @@
+import com.liferay.gradle.util.copy.StripPathSegmentsAction
+
 apply plugin: "com.liferay.gulp"
 apply plugin: "com.liferay.lang.merger"
 
 task testJS
+task buildProtobufjs(type: Copy)
+task wrapProtobufjs
+
+configurations {
+	protobufjs
+}
+
+String protobufjsVersion = "6.7.3"
+
+buildProtobufjs {
+	eachFile new StripPathSegmentsAction(6)
+
+	from {
+		zipTree(configurations.protobufjs.singleFile)
+	}
+
+	include "META-INF/resources/webjars/protobufjs/${protobufjsVersion}/dist/protobuf.js"
+	includeEmptyDirs = false
+	into "classes/META-INF/resources/js"
+}
 
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
@@ -12,6 +34,10 @@ configJSModules {
 }
 
 dependencies {
+	compileInclude group: "com.google.protobuf", name: "protobuf-java", version: "3.2.0"
+
+	protobufjs group: "org.webjars.npm", name: "protobufjs", transitive: false, version: protobufjsVersion
+
 	provided group: "biz.aQute.bnd", name: "biz.aQute.bndlib", version: "3.1.0"
 	provided group: "com.liferay", name: "com.liferay.dynamic.data.mapping.io", version: "2.0.0"
 	provided group: "com.liferay.portal", name: "com.liferay.portal.impl", version: "2.0.0"
@@ -37,6 +63,10 @@ dependencies {
 	testCompile project(":apps:forms-and-workflow:dynamic-data-mapping:dynamic-data-mapping-service")
 }
 
+classes {
+	dependsOn "wrapProtobufjs"
+}
+
 testJS {
 	dependsOn gulpTest
 }
@@ -44,6 +74,19 @@ testJS {
 transpileJS {
 	soySrcIncludes = ""
 	srcIncludes = "**/*.es.js"
+}
+
+wrapProtobufjs {
+	dependsOn buildProtobufjs
+
+	doLast {
+		File protobufJsFile = file("classes/META-INF/resources/js/protobuf.js")
+
+		String wrapperHeader = "AUI.add('liferay-ddm-protobufjs', function(A) {"
+		String wrapperFooter = "}, '', {requires: []});";
+
+		protobufJsFile.text = wrapperHeader + protobufJsFile.text.replace("(typeof window===\"object\"&&window||typeof self===\"object\"&&self||this)", "(Liferay.DDM)") + wrapperFooter
+	}
 }
 
 wrapSoyAlloyTemplate {
