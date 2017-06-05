@@ -77,7 +77,6 @@ public final class DDMFormEvaluationMessages {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      int mutable_bitField0_ = 0;
       try {
         boolean done = false;
         while (!done) {
@@ -659,7 +658,6 @@ public final class DDMFormEvaluationMessages {
               com.google.protobuf.ExtensionRegistryLite extensionRegistry)
               throws com.google.protobuf.InvalidProtocolBufferException {
             this();
-            int mutable_bitField0_ = 0;
             try {
               boolean done = false;
               while (!done) {
@@ -1299,7 +1297,6 @@ public final class DDMFormEvaluationMessages {
               com.google.protobuf.ExtensionRegistryLite extensionRegistry)
               throws com.google.protobuf.InvalidProtocolBufferException {
             this();
-            int mutable_bitField0_ = 0;
             try {
               boolean done = false;
               while (!done) {
@@ -2642,7 +2639,6 @@ public final class DDMFormEvaluationMessages {
 
           public com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationRequest.Form.Field buildPartial() {
             com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationRequest.Form.Field result = new com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationRequest.Form.Field(this);
-            int from_bitField0_ = bitField0_;
             int to_bitField0_ = 0;
             result.dataType_ = dataType_;
             result.fieldName_ = fieldName_;
@@ -4503,7 +4499,6 @@ public final class DDMFormEvaluationMessages {
 
           public com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationRequest.Form.Rule buildPartial() {
             com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationRequest.Form.Rule result = new com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationRequest.Form.Rule(this);
-            int from_bitField0_ = bitField0_;
             int to_bitField0_ = 0;
             result.condition_ = condition_;
             if (((bitField0_ & 0x00000002) == 0x00000002)) {
@@ -5130,7 +5125,6 @@ public final class DDMFormEvaluationMessages {
 
         public com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationRequest.Form buildPartial() {
           com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationRequest.Form result = new com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationRequest.Form(this);
-          int from_bitField0_ = bitField0_;
           if (fieldsBuilder_ == null) {
             if (((bitField0_ & 0x00000001) == 0x00000001)) {
               fields_ = java.util.Collections.unmodifiableList(fields_);
@@ -6873,7 +6867,6 @@ public final class DDMFormEvaluationMessages {
             com.google.protobuf.ExtensionRegistryLite extensionRegistry)
             throws com.google.protobuf.InvalidProtocolBufferException {
           this();
-          int mutable_bitField0_ = 0;
           try {
             boolean done = false;
             while (!done) {
@@ -7980,7 +7973,6 @@ public final class DDMFormEvaluationMessages {
 
         public com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationResponse.Field buildPartial() {
           com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationResponse.Field result = new com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationResponse.Field(this);
-          int from_bitField0_ = bitField0_;
           int to_bitField0_ = 0;
           result.errorMessage_ = errorMessage_;
           result.instanceId_ = instanceId_;
@@ -9030,7 +9022,6 @@ public final class DDMFormEvaluationMessages {
 
       public com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationResponse buildPartial() {
         com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationResponse result = new com.liferay.dynamic.data.mapping.form.renderer.internal.servlet.transport.DDMFormEvaluationMessages.DDMFormEvaluationResponse(this);
-        int from_bitField0_ = bitField0_;
         if (fieldsBuilder_ == null) {
           if (((bitField0_ & 0x00000001) == 0x00000001)) {
             fields_ = java.util.Collections.unmodifiableList(fields_);
