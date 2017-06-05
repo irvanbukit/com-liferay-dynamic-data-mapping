@@ -1,6 +1,8 @@
 ;(function() {
 	var LiferayAUI = Liferay.AUI;
 
+	Liferay.namespace('DDM');
+
 	AUI().applyConfig(
 		{
 			groups: {
@@ -45,7 +47,9 @@
 							path: 'expressions_evaluator.js',
 							requires: [
 								'aui-component',
-								'aui-io-request'
+								'aui-promise',
+								'aui-io-request',
+								'liferay-ddm-protobufjs'
 							]
 						},
 						'liferay-ddm-form-renderer-feedback': {
@@ -203,7 +207,18 @@
 						}
 					},
 					root: MODULE_PATH + '/'
-				}
+				},
+				'utils': {
+					base: MODULE_PATH + '/js/',
+					combine: Liferay.AUI.getCombine(),
+					modules: {
+						'liferay-ddm-protobufjs': {
+							path: 'protobuf.js',
+							requires: []
+						}
+					},
+					root: MODULE_PATH + '/js/'
+				},
 			}
 		}
 	);
