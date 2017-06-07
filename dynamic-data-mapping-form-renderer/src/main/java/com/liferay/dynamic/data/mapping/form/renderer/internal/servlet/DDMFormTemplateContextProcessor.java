@@ -106,6 +106,8 @@ public class DDMFormTemplateContextProcessor {
 			jsonObject.getBoolean("localizable", false), ddmFormField);
 		setDDMFormFieldOptions(
 			jsonObject.getJSONArray("options"), ddmFormField);
+		setDDMFormFieldRequired(
+			jsonObject.getBoolean("required", false), ddmFormField);
 		setDDMFormFieldRepeatable(
 			jsonObject.getBoolean("repeatable", false), ddmFormField);
 		setDDMFormFieldValidation(
@@ -253,6 +255,12 @@ public class DDMFormTemplateContextProcessor {
 		boolean repeatable, DDMFormField ddmFormField) {
 
 		ddmFormField.setRepeatable(repeatable);
+	}
+
+	protected void setDDMFormFieldRequired(
+		boolean required, DDMFormField ddmFormField) {
+
+		ddmFormField.setRequired(required);
 	}
 
 	protected void setDDMFormFieldValidation(
