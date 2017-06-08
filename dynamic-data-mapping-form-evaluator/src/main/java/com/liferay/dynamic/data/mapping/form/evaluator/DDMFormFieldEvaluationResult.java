@@ -85,7 +85,7 @@ public class DDMFormFieldEvaluationResult {
 		List<Object> options = new ArrayList<>();
 
 		for (KeyValuePair keyValuePair :
-			(List<KeyValuePair>)_properties.get("options")) {
+				(List<KeyValuePair>)_properties.get("options")) {
 
 			Map<String, String> option = new HashMap<>();
 
