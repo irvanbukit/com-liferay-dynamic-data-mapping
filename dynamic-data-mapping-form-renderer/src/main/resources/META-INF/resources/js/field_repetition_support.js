@@ -88,15 +88,18 @@ AUI.add(
 					}
 				);
 
+				var name  = config.name;
+				var instanceId = config.instanceId;
+
 				var newInstanceId = Util.generateInstanceId(8);
+				var newName = name.replace(instanceId, newInstanceId);
 
 				config.context.instanceId = newInstanceId;
+				config.context.name = newName;
+				config.context.value = '';
 				config.instanceId = newInstanceId;
-
-				delete config.context.name;
-				delete config.context.value;
-				delete config.name;
-				delete config.value;
+				config.name = newName;
+				config.value = '';
 
 				return config;
 			},
