@@ -2,6 +2,7 @@ AUI.add(
 	'liferay-ddm-form-renderer-field-repetition',
 	function(A) {
 		var AObject = A.Object;
+		var Lang = A.Lang;
 
 		var Renderer = Liferay.DDM.Renderer;
 
@@ -89,17 +90,34 @@ AUI.add(
 				);
 
 				var name  = config.name;
-				var instanceId = config.instanceId;
 
+				var instanceId = config.instanceId;
 				var newInstanceId = Util.generateInstanceId(8);
-				var newName = name.replace(instanceId, newInstanceId);
+
+				if (name) {
+					var newName = name.replace(instanceId, newInstanceId);
+
+					config.name = newName;
+					config.context.name = newName;
+				}
+
+				var value = instance.getValue();
+
+				if (Lang.isArray(value)) {
+					config.context.value = [];
+					config.value = [];
+				}
+				else if (Lang.isObject(value)) {
+					config.context.value = {};
+					config.value = {};
+				}
+				else {
+					config.context.value = '';
+					config.value = '';
+				}
 
 				config.context.instanceId = newInstanceId;
-				config.context.name = newName;
-				config.context.value = '';
 				config.instanceId = newInstanceId;
-				config.name = newName;
-				config.value = '';
 
 				return config;
 			},

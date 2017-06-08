@@ -16,6 +16,7 @@ package com.liferay.dynamic.data.mapping.form.evaluator;
 
 import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.util.HashUtil;
+import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.util.MapUtil;
 
 import java.util.ArrayList;
@@ -78,6 +79,23 @@ public class DDMFormFieldEvaluationResult {
 		getNestedDDMFormFieldEvaluationResults() {
 
 		return _nestedDDMFormFieldEvaluationResults;
+	}
+
+	public List<Object> getOptions() {
+		List<Object> options = new ArrayList<>();
+
+		for (KeyValuePair keyValuePair :
+			(List<KeyValuePair>)_properties.get("options")) {
+
+			Map<String, String> option = new HashMap<>();
+
+			option.put("label", keyValuePair.getValue());
+			option.put("value", keyValuePair.getKey());
+
+			options.add(option);
+		}
+
+		return options;
 	}
 
 	public <T> T getProperty(String name) {

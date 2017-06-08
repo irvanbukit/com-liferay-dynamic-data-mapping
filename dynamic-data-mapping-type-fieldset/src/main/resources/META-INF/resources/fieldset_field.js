@@ -57,20 +57,29 @@ AUI.add(
 						var config = FieldSetField.superclass.copyConfiguration.apply(instance, arguments);
 
 						config.context.nestedFields.forEach(
-							function(field) {
-								delete field.name;
+							function(config) {
+								var name  = config.name;
 
-								field.instanceId = Util.generateInstanceId(8);
+								var instanceId = config.instanceId;
+								var newInstanceId = Util.generateInstanceId(8);
 
-								if (Lang.isArray(field.value)) {
-									field.value = [];
+								if (name) {
+									config.name = name.replace(instanceId, newInstanceId);
 								}
-								else if (Lang.isObject(field.value)) {
-									field.value = {};
+
+								var value = instance.getValue();
+
+								if (Lang.isArray(value)) {
+									config.value = [];
+								}
+								else if (Lang.isObject(value)) {
+									config.value = {};
 								}
 								else {
-									field.value = '';
+									config.value = '';
 								}
+
+								config.instanceId = newInstanceId;
 							}
 						);
 

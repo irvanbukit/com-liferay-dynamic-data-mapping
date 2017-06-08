@@ -32,8 +32,10 @@ import com.liferay.dynamic.data.mapping.form.evaluator.internal.functions.SetInv
 import com.liferay.dynamic.data.mapping.form.evaluator.internal.functions.SetPropertyFunction;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
+import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldValidation;
 import com.liferay.dynamic.data.mapping.model.DDMFormRule;
+import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
@@ -49,6 +51,7 @@ import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.AggregateResourceBundle;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.ResourceBundleLoaderUtil;
@@ -145,6 +148,8 @@ public class DDMFormEvaluatorHelper {
 			ddmFormFieldEvaluationResult, ddmFormField);
 		setDDMFormFieldEvaluationResultRequired(
 			ddmFormFieldEvaluationResult, ddmFormField);
+		setDDMFormFieldEvaluationResultOptions(
+			ddmFormFieldEvaluationResult, ddmFormField);
 
 		setDDMFormFieldEvaluationResultVisibility(
 			ddmFormFieldEvaluationResult, ddmFormField, ddmFormFieldValue);
@@ -195,20 +200,6 @@ public class DDMFormEvaluatorHelper {
 
 			ddmFormFieldEvaluationResultInstances.add(
 				ddmFormFieldEvaluationResult);
-
-			for (DDMFormFieldValue nestedDDMFormFieldValue :
-					ddmFormFieldValue.getNestedDDMFormFieldValues()) {
-
-				DDMFormField nestedDDMFormField =
-					nestedDDMFormFieldValue.getDDMFormField();
-
-				ddmFormFieldEvaluationResult =
-					createDDMFormFieldEvaluationResult(
-						nestedDDMFormField, nestedDDMFormFieldValue);
-
-				ddmFormFieldEvaluationResultInstances.add(
-					ddmFormFieldEvaluationResult);
-			}
 		}
 
 		_ddmFormFieldEvaluationResultsMap.put(
@@ -510,6 +501,31 @@ public class DDMFormEvaluatorHelper {
 
 		ddmFormFieldEvaluationResult.setProperty(
 			"dataType", ddmFormField.getDataType());
+	}
+
+	protected void setDDMFormFieldEvaluationResultOptions(
+		DDMFormFieldEvaluationResult ddmFormFieldEvaluationResult,
+		DDMFormField ddmFormField) {
+
+		DDMFormFieldOptions ddmFormFieldOptions =
+			ddmFormField.getDDMFormFieldOptions();
+
+		Map<String, LocalizedValue> optionValues =
+			ddmFormFieldOptions.getOptions();
+
+		List<KeyValuePair> keyValuePairs = new ArrayList<>();
+
+		for (Map.Entry<String, LocalizedValue> optionValue :
+				optionValues.entrySet()) {
+
+			LocalizedValue label = optionValue.getValue();
+
+			keyValuePairs.add(
+				new KeyValuePair(
+					optionValue.getKey(), label.getString(_locale)));
+		}
+
+		ddmFormFieldEvaluationResult.setProperty("options", keyValuePairs);
 	}
 
 	protected void setDDMFormFieldEvaluationResultReadOnly(
