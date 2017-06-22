@@ -70,7 +70,7 @@ public class PasswordDDMFormFieldRenderer extends BaseDDMFormFieldRenderer {
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
 		Map<String, Object> parameters =
-			textDDMFormFieldTemplateContextContributor.getParameters(
+			passwordDDMFormFieldTemplateContextContributor.getParameters(
 				ddmFormField, ddmFormFieldRenderingContext);
 
 		template.putAll(parameters);
@@ -78,7 +78,7 @@ public class PasswordDDMFormFieldRenderer extends BaseDDMFormFieldRenderer {
 
 	@Reference
 	protected PasswordDDMFormFieldTemplateContextContributor
-		textDDMFormFieldTemplateContextContributor;
+		passwordDDMFormFieldTemplateContextContributor;
 
 	private TemplateResource _templateResource;
 
